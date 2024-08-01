@@ -18,7 +18,7 @@ def check_env_variable_exists(env_file_path, env_name):
     with open(env_file_path, 'r') as file:
         lines = file.readlines()
         for line in lines:
-            if line.startswith(env_name):
+            if line.startswith(env_name + "="):
                 return True
     return False
 
@@ -39,7 +39,7 @@ def update_central_env_file(project_env_dir, env_name, env_value):
     with open(env_file_path, 'w') as file:
         updated = False
         for line in lines:
-            if line.startswith(env_name):
+            if line.startswith(env_name + "="):
                 file.write(f'{env_name}="{env_value}"\n')
                 updated = True
             else:
