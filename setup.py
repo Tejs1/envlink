@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='env_manager',
+    name='envlink',
     version='0.1',
-    py_modules=['env_manager'],
+    py_modules=['envlink'],
     entry_points={
         'console_scripts': [
-            'env_manager=env_manager:main',
+            'envlink=envlink:main',
         ],
     },
     install_requires=[
