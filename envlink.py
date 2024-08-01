@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 import shutil
+import re
 
 CENTRAL_ENV_DIR = os.path.expanduser("~/env")
 
@@ -69,8 +70,11 @@ def move_file_and_create_symlink(source_path, target_path, project_root, project
         print(f"Moved {env_file} to {target_path}")
     create_symlink(project_root, project_env_dir, env_file)
 
+def is_valid_env_file(env_file):
+    return bool(re.match(r'^\.env(\..+)?$', env_file))
+
 def move_and_symlink_env_files(project_root, project_env_dir):
-    env_files = [f for f in os.listdir(project_root) if f.startswith('.env')]
+    env_files = [f for f in os.listdir(project_root) if is_valid_env_file(f)]
     for env_file in env_files:
         source_path = os.path.join(project_root, env_file)
         target_path = os.path.join(project_env_dir, env_file)
@@ -79,14 +83,15 @@ def move_and_symlink_env_files(project_root, project_env_dir):
 def sync_env_files(project_root, project_env_dir):
     # Sync files from central env directory to project directory
     for env_file in os.listdir(project_env_dir):
-        env_file_path = os.path.join(project_env_dir, env_file)
-        symlink_path = os.path.join(project_root, env_file)
-        if not os.path.exists(symlink_path):
-            create_symlink(project_root, project_env_dir, env_file)
+        if is_valid_env_file(env_file):
+            env_file_path = os.path.join(project_env_dir, env_file)
+            symlink_path = os.path.join(project_root, env_file)
+            if not os.path.exists(symlink_path):
+                create_symlink(project_root, project_env_dir, env_file)
 
     # Sync files from project directory to central env directory
     for env_file in os.listdir(project_root):
-        if env_file.startswith('.env'):
+        if is_valid_env_file(env_file):
             source_path = os.path.join(project_root, env_file)
             target_path = os.path.join(project_env_dir, env_file)
             if not os.path.exists(target_path):

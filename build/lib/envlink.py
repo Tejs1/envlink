@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 import shutil
+import re
 
 CENTRAL_ENV_DIR = os.path.expanduser("~/env")
 
@@ -30,7 +31,7 @@ def update_central_env_file(project_env_dir, env_name, env_value):
     
     if env_exists:
         user_choice = input(f"The environment variable {env_name} already exists. Do you want to update the value? (yes/no): ").strip().lower()
-        if user_choice not in ['yes','y','Y','YES','Yes']:
+        if user_choice not in ['yes', 'y']:
             print("Exiting without making changes.")
             sys.exit(0)
     
@@ -61,26 +62,48 @@ def create_symlink(project_root, project_env_dir, env_file_name):
     os.symlink(env_file_path, symlink_path)
     print(f"Symlink created: {symlink_path} -> {env_file_path}")
 
+def move_file_and_create_symlink(source_path, target_path, project_root, project_env_dir, env_file):
+    if os.path.exists(target_path):
+        print(f"Skipping {env_file} as it already exists in the central env directory.")
+    else:
+        shutil.move(source_path, target_path)
+        print(f"Moved {env_file} to {target_path}")
+    create_symlink(project_root, project_env_dir, env_file)
+
+def is_valid_env_file(env_file):
+    return bool(re.match(r'^\.env(\..+)?$', env_file))
+
 def move_and_symlink_env_files(project_root, project_env_dir):
-    env_files = [f for f in os.listdir(project_root) if f.startswith('.env')]
+    env_files = [f for f in os.listdir(project_root) if is_valid_env_file(f)]
     for env_file in env_files:
         source_path = os.path.join(project_root, env_file)
         target_path = os.path.join(project_env_dir, env_file)
-        
-        if os.path.exists(target_path):
-            print(f"Skipping {env_file} as it already exists in the central env directory.")
-        else:
-            shutil.move(source_path, target_path)
-            print(f"Moved {env_file} to {target_path}")
-        
-        create_symlink(project_root, project_env_dir, env_file)
+        move_file_and_create_symlink(source_path, target_path, project_root, project_env_dir, env_file)
+
+def sync_env_files(project_root, project_env_dir):
+    # Sync files from central env directory to project directory
+    for env_file in os.listdir(project_env_dir):
+        if is_valid_env_file(env_file):
+            env_file_path = os.path.join(project_env_dir, env_file)
+            symlink_path = os.path.join(project_root, env_file)
+            if not os.path.exists(symlink_path):
+                create_symlink(project_root, project_env_dir, env_file)
+
+    # Sync files from project directory to central env directory
+    for env_file in os.listdir(project_root):
+        if is_valid_env_file(env_file):
+            source_path = os.path.join(project_root, env_file)
+            target_path = os.path.join(project_env_dir, env_file)
+            if not os.path.exists(target_path):
+                move_file_and_create_symlink(source_path, target_path, project_root, project_env_dir, env_file)
 
 def main():
-    parser = argparse.ArgumentParser(description="Manage environment variables, move .env files, and create symlinks for projects.")
+    parser = argparse.ArgumentParser(description="Manage environment variables, move .env files, sync env files, and create symlinks for projects.")
     parser.add_argument('project_name', type=str, help='The name of the project')
     parser.add_argument('--move', '--mv', action='store_true', help='Move .env files to central directory and create symlinks')
     parser.add_argument('--key', '-k', type=str, help='The name of the environment variable')
     parser.add_argument('--value', '-v', type=str, help='The value of the environment variable')
+    parser.add_argument('--sync', action='store_true', help='Sync .env files between central directory and project directory')
     
     args = parser.parse_args()
 
@@ -92,11 +115,13 @@ def main():
     
     if args.move:
         move_and_symlink_env_files(project_root, project_env_dir)
+    elif args.sync:
+        sync_env_files(project_root, project_env_dir)
     elif args.key and args.value:
         update_central_env_file(project_env_dir, args.key, args.value)
         create_symlink(project_root, project_env_dir, '.env')
     else:
-        print("Error: You must specify either --move to move .env files or both --key and --value to update an environment variable.")
+        print("Error: You must specify either --move to move .env files, --sync to sync .env files, or both --key and --value to update an environment variable.")
         sys.exit(1)
 
 if __name__ == "__main__":
