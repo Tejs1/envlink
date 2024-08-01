@@ -12,11 +12,26 @@ def ensure_project_env_dir(project_name):
         os.makedirs(project_env_dir)
     return project_env_dir
 
+def check_env_variable_exists(env_file_path, env_name):
+    if not os.path.exists(env_file_path):
+        return False
+    with open(env_file_path, 'r') as file:
+        lines = file.readlines()
+        for line in lines:
+            if line.startswith(env_name):
+                return True
+    return False
+
 def update_central_env_file(project_env_dir, env_name, env_value):
     env_file_path = os.path.join(project_env_dir, '.env')
     
-    if not os.path.exists(env_file_path):
-        open(env_file_path, 'a').close()
+    env_exists = check_env_variable_exists(env_file_path, env_name)
+    
+    if env_exists:
+        user_choice = input(f"The environment variable {env_name} already exists. Do you want to update the value? (yes/no): ").strip().lower()
+        if user_choice not in ['yes','y','Y','YES','Yes']:
+            print("Exiting without making changes.")
+            sys.exit(0)
     
     with open(env_file_path, 'r') as file:
         lines = file.readlines()
@@ -25,12 +40,12 @@ def update_central_env_file(project_env_dir, env_name, env_value):
         updated = False
         for line in lines:
             if line.startswith(env_name):
-                file.write(f"{env_name}={env_value}\n")
+                file.write(f'{env_name}="{env_value}"\n')
                 updated = True
             else:
                 file.write(line)
         if not updated:
-            file.write(f"{env_name}={env_value}\n")
+            file.write(f'{env_name}="{env_value}"\n')
 
 def create_symlink(project_root, project_env_dir):
     env_file_path = os.path.join(project_env_dir, '.env')
