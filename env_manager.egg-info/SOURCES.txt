@@ -1,0 +1,7 @@
+env_manager.py
+setup.py
+env_manager.egg-info/PKG-INFO
+env_manager.egg-info/SOURCES.txt
+env_manager.egg-info/dependency_links.txt
+env_manager.egg-info/entry_points.txt
+env_manager.egg-info/top_level.txt

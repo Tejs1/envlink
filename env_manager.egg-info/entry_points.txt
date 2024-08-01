@@ -1,0 +1,2 @@
+[console_scripts]
+env_manager = env_manager:main
