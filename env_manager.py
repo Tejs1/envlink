@@ -6,12 +6,14 @@ import argparse
 
 CENTRAL_ENV_DIR = os.path.expanduser("~/env")
 
-def ensure_central_env_dir():
-    if not os.path.exists(CENTRAL_ENV_DIR):
-        os.makedirs(CENTRAL_ENV_DIR)
+def ensure_project_env_dir(project_name):
+    project_env_dir = os.path.join(CENTRAL_ENV_DIR, project_name)
+    if not os.path.exists(project_env_dir):
+        os.makedirs(project_env_dir)
+    return project_env_dir
 
-def update_central_env_file(project_name, env_name, env_value):
-    env_file_path = os.path.join(CENTRAL_ENV_DIR, f"{project_name}/.env")
+def update_central_env_file(project_env_dir, env_name, env_value):
+    env_file_path = os.path.join(project_env_dir, '.env')
     
     if not os.path.exists(env_file_path):
         open(env_file_path, 'a').close()
@@ -30,8 +32,8 @@ def update_central_env_file(project_name, env_name, env_value):
         if not updated:
             file.write(f"{env_name}={env_value}\n")
 
-def create_symlink(project_root, project_name):
-    env_file_path = os.path.join(CENTRAL_ENV_DIR, f"{project_name}/.env")
+def create_symlink(project_root, project_env_dir):
+    env_file_path = os.path.join(project_env_dir, '.env')
     symlink_path = os.path.join(project_root, ".env")
     
     if os.path.islink(symlink_path):
@@ -59,9 +61,9 @@ def main():
     
     print(f"Current directory: {project_root}")
     
-    ensure_central_env_dir()
-    update_central_env_file(project_name, env_name, env_value)
-    create_symlink(project_root, project_name)
+    project_env_dir = ensure_project_env_dir(project_name)
+    update_central_env_file(project_env_dir, env_name, env_value)
+    create_symlink(project_root, project_env_dir)
 
 if __name__ == "__main__":
     main()
